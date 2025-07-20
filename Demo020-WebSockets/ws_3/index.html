@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name='color-scheme' content='dark light' />
+    <title>Document</title>
+    <style>
+      #messageList {
+        display: flex;
+        flex-flow: column;
+        border: 1px solid currentColor;
+        overflow: scroll;
+        width: 100%;
+        height: 20em;
+      }
+
+      .message {
+        width: fit-content;
+        margin: 0.25em 0.5em;
+        padding: 0.25em 0.5em;
+      }
+
+      .client-message {
+        background-color: hsla(330 100% 20% / 1);
+        align-self: flex-end;
+
+      }
+
+      .server-message {
+        background-color: hsla(200 100% 20% / 1);
+        align-self: flex-start;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>WebSocket Demo - With Connections Manager</h1>
+    <button type="button" id="buttonConnectWS" onclick="connect(event)">Connect</button>
+    <button type="button" id="buttonDisconnectWS" disabled onclick="disconnect(event)">Disconnect</button>
+    <hr>
+    <form action="" onsubmit="sendMessage(event)">
+      <label for="userInput">
+        Message
+        <input type="text" autocomplete="off" id="userInput">
+      </label>
+      <button>Send</button>
+    </form>
+    <hr>
+    <div id="messageList">
+      <div class="client-message message">Dolor, eligendi atque.</div>
+      <div class="server-message message">Possimus, eum quo.</div>
+    </div>
+  </body>
+
+  <script>
+    let connectWS = document.getElementById('buttonConnectWS')
+    let disconnectWS = document.getElementById('buttonDisconnectWS')
+
+    let messageList = document.getElementById('messageList')
+    let userInput = document.getElementById('userInput')
+    let ws = null
+
+    let client_id = "$client_id";
+
+    const WSonOpen = (event) => {
+      let newmsg = document.createElement('p')
+      let dt = new Date()
+      let content = document.createTextNode(`Connection Open   : ${ dt.toISOString() }`)
+      newmsg.classList.add("server-message")
+      newmsg.classList.add("message")
+      newmsg.appendChild(content)
+      messageList.appendChild(newmsg)
+    }
+    const WSonMessage = (event) => {
+      let jd = JSON.parse(event.data)
+      let msg = jd["message"]
+      let cid = jd["client_id"]
+      if (cid === client_id) return
+      let newmsg = document.createElement('p')
+      newmsg.classList.add("server-message")
+      newmsg.classList.add("message")
+
+      let content = document.createTextNode(`${cid} : ${msg}`)
+
+      newmsg.appendChild(content)
+      messageList.appendChild(newmsg)
+      newmsg.scrollIntoView()
+    }
+    const WSonClose = (event) => {
+      let newmsg = document.createElement('p')
+      let dt = new Date()
+      let content = document.createTextNode(`Connection Closed : ${ dt.toISOString() }`)
+      newmsg.classList.add("server-message")
+      newmsg.classList.add("message")
+      newmsg.appendChild(content)
+      messageList.appendChild(newmsg)
+      ws.removeEventListener('onmessage', WSonClose)
+      ws.removeEventListener('onclose', WSonMessage)
+      newmsg.scrollIntoView()
+      ws = null
+      connectWS.disabled = !connectWS.disabled
+      disconnectWS.disabled = !disconnectWS.disabled
+    }
+
+    function connect(event) {
+      ws = new WebSocket("ws://localhost:8000/demo/3/ws/$client_id")
+      ws.onopen = WSonOpen
+      ws.onmessage = WSonMessage
+      ws.onclose = WSonClose
+
+      event.preventDefault();
+      connectWS.disabled = !connectWS.disabled
+      disconnectWS.disabled = !disconnectWS.disabled
+    }
+    function sendMessage(event) {
+      if (ws !== null && userInput.value !== "") {
+        ws.send(userInput.value)
+        let newmsg = document.createElement('p')
+        newmsg.classList.add("client-message")
+        newmsg.classList.add("message")
+        let content = document.createTextNode(userInput.value)
+        newmsg.appendChild(content)
+        messageList.appendChild(newmsg)
+        newmsg.scrollIntoView()
+        userInput.value = ''
+      }
+      event.preventDefault()
+    }
+    function disconnect(event) {
+      if (ws !== null) {
+        ws.close()
+      }
+      event.preventDefault()
+    }
+
+  </script>
+
+</html>

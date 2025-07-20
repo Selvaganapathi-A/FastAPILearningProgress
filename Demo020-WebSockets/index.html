@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name='color-scheme' content='dark light' />
+    <title> Websocket </title>
+  </head>
+
+  <body>
+    <h1>WebSocket Chat</h1>
+    <form action="" onsubmit="sendMessage(event)">
+      <label>Item ID: <input type="text" id="itemId" autocomplete="off" value="foo" /></label>
+      <label>Token: <input type="text" id="token" autocomplete="off" value="some-key-token" /></label>
+      
+      <button id="btn-connect" onclick="connect(event)">Connect</button>
+      <button id="btn-disconnect" onclick="disconnect(event)" disabled>Disconnect</button>
+      <hr>
+      <label>Message: <input type="text" id="messageText" autocomplete="off" /></label>
+      <button>Send</button>
+    </form>
+    <ul id='messages'>
+    </ul>
+    <script>
+      let btnConnect = document.getElementById("btn-connect")
+      let btnDisconnect = document.getElementById("btn-disconnect")
+
+      let ws = null;
+      function disconnect(event) {
+        if (typeof ws !== "null") {
+          ws.close()
+          ws = null;
+          btnConnect.disabled = !btnConnect.disabled
+          btnDisconnect.disabled = !btnDisconnect.disabled
+        }
+      }
+      function connect(event) {
+        let itemId = document.getElementById("itemId")
+        let token = document.getElementById("token")
+        ws = new WebSocket("ws://localhost:8000/items/" + itemId.value + "/ws?token=" + token.value);
+        ws.onmessage = function (event) {
+          let messages = document.getElementById('messages')
+          let message = document.createElement('li')
+          let content = document.createTextNode(event.data)
+          message.appendChild(content)
+          messages.appendChild(message)
+        };
+        event.preventDefault()
+
+        btnConnect.disabled = !btnConnect.disabled
+        btnDisconnect.disabled = !btnDisconnect.disabled
+      }
+      function sendMessage(event) {
+        let input = document.getElementById("messageText")
+        ws.send(input.value)
+        input.value = ''
+        event.preventDefault()
+      }
+    </script>
+  </body>
+
+</html>

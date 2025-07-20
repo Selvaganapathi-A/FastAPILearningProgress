@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name='color-scheme' content='dark light' />
+    <title>Document</title>
+  </head>
+
+  <body>
+    <h1>WebSocket Demo - Simple</h1>
+    <button type="button" id="buttonConnectWS" onclick="connect(event)">Connect</button>
+    <button type="button" id="buttonDisconnectWS" disabled onclick="disconnect(event)">Disconnect</button>
+    <hr>
+    <form action="" onsubmit="sendMessage(event)">
+      <label for="userInput">
+        Message
+        <input type="text" autocomplete="off" id="userInput">
+      </label>
+      <button>Send</button>
+    </form>
+    <hr>
+    <ul id="messageList"></ul>
+  </body>
+
+  <script>
+    let connectWS = document.getElementById('buttonConnectWS')
+    let disconnectWS = document.getElementById('buttonDisconnectWS')
+
+    let messageList = document.getElementById('messageList')
+    let userInput = document.getElementById('userInput')
+    let ws = null
+
+    const WSonOpen = (event) => {
+      let newmsg = document.createElement('li')
+      let dt = new Date()
+      let content = document.createTextNode(`Connection Open   : ${ dt.toISOString() }`)
+      newmsg.appendChild(content)
+      messageList.appendChild(newmsg)
+    }
+    const WSonMessage = (event) => {
+      let newmsg = document.createElement('li')
+      let content = document.createTextNode(event.data)
+      newmsg.appendChild(content)
+      messageList.appendChild(newmsg)
+    }
+    const WSonClose = (event) => {
+      let newmsg = document.createElement('li')
+      let dt = new Date()
+      let content = document.createTextNode(`Connection Closed : ${ dt.toISOString() }`)
+      newmsg.appendChild(content)
+      messageList.appendChild(newmsg)
+
+      ws.removeEventListener('onmessage', WSonClose)
+      ws.removeEventListener('onclose', WSonMessage)
+      ws = null
+      connectWS.disabled = !connectWS.disabled
+      disconnectWS.disabled = !disconnectWS.disabled
+    }
+
+    function connect(event) {
+      ws = new WebSocket("ws://localhost:8000/demo/1/ws")
+      ws.onopen = WSonOpen
+      ws.onmessage = WSonMessage
+      ws.onclose = WSonClose
+
+      event.preventDefault();
+      connectWS.disabled = !connectWS.disabled
+      disconnectWS.disabled = !disconnectWS.disabled
+    }
+    function sendMessage(event) {
+      if (ws !== null && userInput.value !== "") {
+        ws.send(userInput.value)
+        userInput.value = ''
+      }
+      event.preventDefault()
+    }
+    function disconnect(event) {
+      if (ws !== null) {
+        ws.close()
+      }
+      event.preventDefault()
+    }
+
+  </script>
+
+</html>

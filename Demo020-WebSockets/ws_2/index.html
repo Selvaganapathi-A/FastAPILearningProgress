@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name='color-scheme' content='dark light' />
+    <title>Document</title>
+  </head>
+
+  <body>
+    <h1>WebSocket Demo - With Path, Query and Depends </h1>
+    <label for="roomNo">
+      Room Number
+      <input type="text" autocomplete="off" id="roomNo" required>
+    </label>
+    <label for="userToken">
+      Token
+      <input type="text" autocomplete="off" id="userToken" required>
+    </label>
+    <label for="userQuery">
+      Query
+      <input type="text" autocomplete="off" id="userQuery">
+    </label>
+    <hr>
+    <button type="button" id="buttonConnectWS" onclick="connect(event)">Connect</button>
+    <button type="button" id="buttonDisconnectWS" disabled onclick="disconnect(event)">Disconnect</button>
+    <hr>
+    <form action="" onsubmit="sendMessage(event)">
+      <label for="userInput">
+        Message
+        <input type="text" autocomplete="off" id="userInput">
+      </label>
+      <button>Send</button>
+    </form>
+    <hr>
+    <ul id="messageList"></ul>
+  </body>
+
+  <script>
+    let connectWS = document.getElementById('buttonConnectWS')
+    let disconnectWS = document.getElementById('buttonDisconnectWS')
+    //
+    let messageList = document.getElementById('messageList')
+    let userInput = document.getElementById('userInput')
+    //
+    let roomNo = document.getElementById('roomNo')
+    let userQuery = document.getElementById('userQuery')
+    let userToken = document.getElementById('userToken')
+    //
+    let ws = null
+
+    const WSonOpen = (event) => {
+      let newmsg = document.createElement('li')
+      let dt = new Date()
+      let content = document.createTextNode(`Connection Open   : ${ dt.toISOString() }`)
+      newmsg.appendChild(content)
+      messageList.appendChild(newmsg)
+    }
+    const WSonMessage = (event) => {
+      let newmsg = document.createElement('li')
+      let content = document.createTextNode(event.data)
+      newmsg.appendChild(content)
+      messageList.appendChild(newmsg)
+    }
+    const WSonClose = (event) => {
+      let newmsg = document.createElement('li')
+      let dt = new Date()
+      let content = document.createTextNode(`Connection Closed : ${ dt.toISOString() }`)
+      newmsg.appendChild(content)
+      messageList.appendChild(newmsg)
+
+      ws.removeEventListener('onmessage', WSonClose)
+      ws.removeEventListener('onclose', WSonMessage)
+      ws = null
+      connectWS.disabled = !connectWS.disabled
+      disconnectWS.disabled = !disconnectWS.disabled
+      roomNo.disabled = !roomNo.disabled
+      userQuery.disabled = !userQuery.disabled
+      userToken.disabled = !userToken.disabled
+    }
+
+    function connect(event) {
+      if (roomNo.value === '' || userToken.value === '') return
+      let websocketURL = `ws://localhost:8000/demo/2/${ roomNo.value }/ws?token=${ userToken.value }`
+      if (userQuery.value !== "") {
+        websocketURL = websocketURL + `&query=${ userQuery.value }`
+      }
+      ws = new WebSocket(websocketURL)
+      // * Register for Event Listener
+      ws.onopen = WSonOpen
+      ws.onmessage = WSonMessage
+      ws.onclose = WSonClose
+
+      event.preventDefault();
+      connectWS.disabled = !connectWS.disabled
+      disconnectWS.disabled = !disconnectWS.disabled
+      roomNo.disabled = !roomNo.disabled
+      userQuery.disabled = !userQuery.disabled
+      userToken.disabled = !userToken.disabled
+    }
+    function sendMessage(event) {
+      if (ws !== null && userInput.value !== "") {
+        ws.send(userInput.value)
+        userInput.value = ''
+      }
+      event.preventDefault()
+    }
+    function disconnect(event) {
+      if (ws !== null) {
+        ws.close()
+      }
+      event.preventDefault()
+    }
+
+  </script>
+
+</html>
